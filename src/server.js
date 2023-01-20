@@ -12,7 +12,20 @@ import reviewRouter from "./api/reviews/index.js";
 import filesRouter from "./api/file/index.js";
 const server = express();
 const port = process.env.PORT || 3001;
+const whitelist = [process.env.FE_DEV_URL, process.env.FE_PROD_URL];
 
+server.use(
+  cors({
+    origin: (origin, corsNext) => {
+      console.log("Origin:", origin);
+      if (!origin || whitelist.indexOf(origin) !== -1) {
+        corsNext(null, true);
+      } else {
+        corsNext(createHttpError(400, `Cors error ${origin}`));
+      }
+    },
+  })
+);
 server.use(cors());
 server.use(express.json());
 server.use("/products", productRouter);
