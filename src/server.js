@@ -9,12 +9,14 @@ import {
 } from "./errorHandlers.js";
 import productRouter from "./api/products/index.js";
 import reviewRouter from "./api/reviews/index.js";
+import filesRouter from "./api/file/index.js";
 const server = express();
 const port = process.env.PORT || 3001;
 
 server.use(cors());
 server.use(express.json());
 server.use("/products", productRouter);
+server.use("/products", filesRouter);
 server.use("/reviews", reviewRouter);
 server.use(badRequestHandler);
 server.use(notFoundHandler);
