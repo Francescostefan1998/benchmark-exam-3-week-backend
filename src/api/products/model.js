@@ -22,7 +22,8 @@ productSchema.static("findProductsWithReviews", async function (query) {
   const products = await this.find(query.criteria, query.criteria.fields)
     .limit(query.options.limit)
     .skip(query.options.skip)
-    .sort(query.options.sort);
+    .sort(query.options.sort)
+    .populate({ path: "reviews", select: "comment firstName" });
   return { total, products };
 });
 

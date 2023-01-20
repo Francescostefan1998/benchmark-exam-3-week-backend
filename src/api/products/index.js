@@ -32,7 +32,10 @@ productRouter.get("/", async (req, res, next) => {
 });
 productRouter.get("/:productId", async (req, res, next) => {
   try {
-    const product = await ProductModel.findById(req.params.productId);
+    const product = await ProductModel.findById(req.params.productId).populate({
+      path: "reviews",
+      select: "comment firstName",
+    });
     if (product) {
       res.send(product);
     } else {
