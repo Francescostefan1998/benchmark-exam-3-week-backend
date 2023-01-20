@@ -2,6 +2,8 @@ import express from "express";
 import createHttpError from "http-errors";
 import mongoose from "mongoose";
 import ReviewModel from "./model.js";
+import q2m from "query-to-mongo";
+import ProductModel from "../products/model.js";
 
 const reviewRouter = express.Router();
 
@@ -10,6 +12,22 @@ reviewRouter.post("/", async (req, res, next) => {
     const newReview = new ReviewModel(req.body);
     const { _id } = await newReview.save();
 
+    const updatedProduct = await ProductModel.findByIdAndUpdate(
+      req.body.product,
+      { $push: { reviews: _id } },
+      { new: true }
+    );
+    if (updatedProduct) {
+      res.send(updatedProduct);
+    } else {
+      next(
+        createHttpError(
+          404,
+          `Product with id ${req.params.productId} not found`
+        )
+      );
+    }
+
     res.status(201).send({ _id });
   } catch (error) {
     next(error);
@@ -17,15 +35,26 @@ reviewRouter.post("/", async (req, res, next) => {
 });
 reviewRouter.get("/", async (req, res, next) => {
   try {
-    const reviews = await ReviewModel.find();
-    res.send(reviews);
+    const mongoQuery = q2m(req.query);
+    const { total, reviews } = await ReviewModel.findReviewWithProduct(
+      mongoQuery
+    );
+    res.send({
+      links: mongoQuery.links("http://localhost:3001/reviews", total),
+      total,
+      totalPages: Math.ceil(total / mongoQuery.options.limit),
+      reviews,
+    });
   } catch (error) {
     next(error);
   }
 });
 reviewRouter.get("/:reviewId", async (req, res, next) => {
   try {
-    const review = await ReviewModel.findById(req.params.reviewId);
+    const review = await ReviewModel.findById(req.params.reviewId).populate({
+      path: "product",
+      select: "name description brand imageUrl price category ",
+    });
     if (review) {
       res.send(review);
     } else {
